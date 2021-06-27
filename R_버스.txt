@@ -1,0 +1,99 @@
+#Step 1. 작업 디렉토리 설정 및 필수 패키지 설치와 실행
+setwd("C:\\R_ODA")
+#install.packages("KoNLP") 
+install.packages("wordcloud") 
+install.packages("stringr")
+
+library(stringr)
+library(KoNLP)  
+library(wordcloud)
+
+useSejongDic() 
+
+#Step 2. 원본 파일 불러오기
+data1 <- readLines("버스titles.txt")
+head(data1,10)
+
+#Step 3. 특수문자와 중복 댓글 제거하기
+data1 <- unique(data1)  # 중복되는 줄 제거하기
+length(data1)
+
+# 아래 코드는 한글과 숫자와 영어를 제외한 특수문자를 모두 삭제하는 코드입니다
+data2 <- str_replace_all(data1, "[^[:alpha:][:digit:][:blank:]]" , " " )
+
+#Step 4. 한글 키워드중 명사 추출하기
+data3 <-extractNoun(data2) 
+head(data3,5)
+
+#Step 5. 불용어 제거 및 단어 정제 하기 
+data4 <- unlist(data3)
+data5 <- gsub("bus", "버스", data4) 
+data5 <- gsub("Bus", "버스", data5)
+data5 <- gsub("Bu", "버스", data5)
+data5 <- gsub("BUS", "버스", data5)
+data5 <- gsub("BU", "버스", data5)
+data5 <- gsub("bu", "버스", data5)
+data5 <- gsub("METHOD", "방법", data5)
+data5 <- gsub("method", "방법", data5)
+data5 <- gsub("Method", "방법", data5)
+data5 <- gsub("apparatus", "APPARATUS", data5)
+data5 <- gsub("Apparatus", "APPARATUS", data5)
+data5 <- gsub("system", "SYSTEM", data5)
+data5 <- gsub("System", "SYSTEM", data5)
+data5 <- gsub("시스템", "SYSTEM", data5)
+data5 <- gsub("usg", "USG", data5)
+data5 <- gsub("Usg", "USG", data5)
+data5 <- gsub("device", "장치", data5)
+data5 <- gsub("Device", "장치", data5)
+data5 <- gsub("DEVIC", "장치", data5)
+data5 <- gsub("디바이스", "장치", data5)
+data5 <- gsub("structure", "구조", data5)
+data5 <- gsub("Structure", "구조", data5)
+data5 <- gsub("도어", "DOOR", data5)
+data5 <- gsub("door", "DOOR", data5)
+data5 <- gsub("Door", "DOOR", data5)
+data5 <- gsub("bar", "버스bar", data5)
+data5 <- gsub("Bar", "버스bar", data5)
+data5 <- gsub("BAR", "버스bar", data5)
+data5 <- gsub("버스버스bar", "버스bar", data5)
+data5 <- gsub("데이터", "DATA", data5)
+data5 <- gsub("data", "DATA", data5)
+data5 <- gsub("syste", "SYSTE", data5)
+data5 <- gsub("sam", "SAM", data5)
+data5 <- gsub("Sam", "SAM", data5)
+data5 <- gsub("air", "AIR", data5)
+data5 <- gsub("Air", "AIR", data5)
+
+head(data5,5)
+
+length(data5)
+
+#Step 6. 임시 집계하여 추출된 키워드 확인
+data6 <- Filter(function(y) {nchar(y) <= 10 & nchar(y) >1 },data5)
+wordcount <- table(unlist(data6))
+head(sort(wordcount, decreasing=T),100)
+
+#Step 7. 필요 없는 명사들 다시 필터링하기
+txt <- readLines("버스titles_gsub.txt")
+txt
+cnt_txt <- length(txt)
+cnt_txt
+for ( i in 1:cnt_txt ){
+      data6 <- gsub((txt[i]),"", data6)   
+      }
+
+data7 <- Filter(function(y) {nchar(y) <= 10 && nchar(y) >1 },data6)
+wordcount2 <- table(data7)
+head(sort(wordcount2, decreasing=T),100)
+
+#Step 8. 워드 클라우드로 시각화 하기
+
+par(oma=c(0.1,0.1,0.1,0.1))  # 출력될 화면의 여백 크기 지정하기
+palete <- brewer.pal(7,"Set1")
+wordcloud(names(wordcount2),freq=wordcount2,scale=c(5,1),rot.per=0.25,min.freq=80,
+random.order=F,random.color=T,colors=palete)
+
+#Step 9. 완성된 워드 클라우드를 그림파일로 저장합니다.
+# 생성된 워드 클라우드가 작업 디렉토리에 저장됩니다.
+getwd( )
+savePlot("버스.png" , type="png")
